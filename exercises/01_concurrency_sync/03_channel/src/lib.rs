@@ -9,16 +9,24 @@
 //! - Multiple producers can be created via `Sender::clone()`
 
 use std::sync::mpsc;
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 /// Create a producer thread that sends each element from items into the channel.
 /// The main thread receives all messages and returns them.
 pub fn simple_send_recv(items: Vec<String>) -> Vec<String> {
-    // TODO: Create channel
-    // TODO: Spawn thread to send each element in items
-    // TODO: In main thread, receive all messages and collect into Vec
+    // Create channel
+    // Spawn thread to send each element in items
+    // In main thread, receive all messages and collect into Vec
     // Hint: When all Senders are dropped, recv() returns Err
-    todo!()
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        items.into_iter().for_each(|x| tx.send(x).unwrap());
+    })
+    .join()
+    .unwrap();
+
+    rx.iter().collect()
 }
 
 /// Create `n_producers` producer threads, each sending a message in format `"msg from {id}"`.
@@ -26,11 +34,28 @@ pub fn simple_send_recv(items: Vec<String>) -> Vec<String> {
 ///
 /// Hint: Use `tx.clone()` to create multiple senders. Note that the original tx must also be dropped.
 pub fn multi_producer(n_producers: usize) -> Vec<String> {
-    // TODO: Create channel
-    // TODO: Clone a sender for each producer
-    // TODO: Remember to drop the original sender, otherwise receiver won't finish
-    // TODO: Collect all messages and sort
-    todo!()
+    // Create channel
+    // Clone a sender for each producer
+    // Remember to drop the original sender, otherwise receiver won't finish
+    // Collect all messages and sort
+    let (tx, rx) = mpsc::channel();
+
+    let handles: Vec<JoinHandle<()>> = (0..n_producers)
+        .map(|i| {
+            let tx = tx.clone();
+            thread::spawn(move || tx.send(format!("msg from {i}")).unwrap())
+        })
+        .collect();
+
+    drop(tx);
+
+    let collected: Vec<String> = rx.iter().collect();
+
+    handles.into_iter().for_each(|h| h.join().unwrap());
+
+    let mut result = collected;
+    result.sort();
+    result
 }
 
 #[cfg(test)]
