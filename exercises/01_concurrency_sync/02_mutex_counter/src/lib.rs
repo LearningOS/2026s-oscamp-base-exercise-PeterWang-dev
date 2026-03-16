@@ -7,7 +7,6 @@
 //! - `Arc<T>` atomic reference counting enables cross-thread sharing
 //! - `lock()` acquires the lock and accesses data
 
-use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::thread;
 

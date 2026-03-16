@@ -167,7 +167,7 @@ pub fn double_in_thread(numbers: Vec<i32>) -> Vec<i32> {
 /// Hint: Create two threads for each vector.
 #[allow(unused_variables)]
 pub fn parallel_sum(a: Vec<i32>, b: Vec<i32>) -> (i32, i32) {
-    // TODO: Create two threads to sum a and b respectively
+    // Create two threads to sum a and b respectively
     // Join both threads to get results
     (
         thread::spawn(move || a.iter().sum()).join().unwrap(),
