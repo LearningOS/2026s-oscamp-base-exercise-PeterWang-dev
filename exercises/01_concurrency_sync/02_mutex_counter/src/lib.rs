@@ -7,6 +7,7 @@
 //! - `Arc<T>` atomic reference counting enables cross-thread sharing
 //! - `lock()` acquires the lock and accesses data
 
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -16,11 +17,26 @@ use std::thread;
 ///
 /// Hint: Use `Arc<Mutex<usize>>` as the shared counter.
 pub fn concurrent_counter(n_threads: usize, count_per_thread: usize) -> usize {
-    // TODO: Create Arc<Mutex<usize>> with initial value 0
-    // TODO: Spawn n_threads threads
-    // TODO: In each thread, lock() and increment count_per_thread times
-    // TODO: Join all threads, return final value
-    todo!()
+    // Create Arc<Mutex<usize>> with initial value 0
+    // Spawn n_threads threads
+    // In each thread, lock() and increment count_per_thread times
+    // Join all threads, return final value
+    let shared_counter = Arc::new(Mutex::new(0usize));
+
+    thread::scope(|s| {
+        for _ in 0..n_threads {
+            let shared_counter = Arc::clone(&shared_counter);
+            s.spawn(move || {
+                let mut counter = shared_counter.lock().unwrap();
+                *counter += count_per_thread;
+            });
+        }
+    });
+
+    Arc::try_unwrap(shared_counter)
+        .unwrap()
+        .into_inner()
+        .unwrap()
 }
 
 /// Add elements to a shared vector concurrently using multiple threads.
@@ -29,10 +45,26 @@ pub fn concurrent_counter(n_threads: usize, count_per_thread: usize) -> usize {
 ///
 /// Hint: Use `Arc<Mutex<Vec<usize>>>`.
 pub fn concurrent_collect(n_threads: usize) -> Vec<usize> {
-    // TODO: Create Arc<Mutex<Vec<usize>>>
-    // TODO: Each thread pushes its own id
-    // TODO: After joining all threads, sort the result and return
-    todo!()
+    // Create Arc<Mutex<Vec<usize>>>
+    // Each thread pushes its own id
+    // After joining all threads, sort the result and return
+    let shared_vector = Arc::new(Mutex::new(Vec::new()));
+
+    thread::scope(|s| {
+        for i in 0..n_threads {
+            let shared_vector = Arc::clone(&shared_vector);
+            s.spawn(move || {
+                shared_vector.lock().unwrap().push(i);
+            });
+        }
+    });
+
+    let mut result = Arc::try_unwrap(shared_vector)
+        .unwrap()
+        .into_inner()
+        .unwrap();
+    result.sort();
+    result
 }
 
 #[cfg(test)]
